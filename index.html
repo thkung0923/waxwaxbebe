@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>跳蚤處理安心進度</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --cream: #FAF6F0;
+  --warm: #F2EBE0;
+  --card: #FFFEFB;
+  --gold: #C8873A;
+  --gold-light: #E8A85A;
+  --green: #7aaa68;
+  --green-light: #96c484;
+  --brown: #3A2810;
+  --muted: #9A8A78;
+  --border: #E5D9C8;
+  --shadow: rgba(60,30,10,0.10);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--cream);
+  font-family: 'Noto Sans TC', sans-serif;
+  color: var(--brown);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.bg-deco {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.bg-deco::before {
+  content: '';
+  position: absolute;
+  top: -180px; right: -180px;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,135,58,0.13) 0%, transparent 70%);
+}
+.bg-deco::after {
+  content: '';
+  position: absolute;
+  bottom: -140px; left: -140px;
+  width: 420px; height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(122,170,104,0.12) 0%, transparent 70%);
+}
+.bg-dots {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(circle, rgba(180,140,90,0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.container {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 40px 18px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+header { text-align: center; margin-bottom: 36px; }
+.paw-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(200,135,58,0.35);
+  font-size: 36px;
+  margin-bottom: 16px;
+  animation: float 4s ease-in-out infinite;
+}
+@keyframes float {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-8px) rotate(3deg); }
+}
+header h1 {
+  font-family: 'Noto Serif TC', serif;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--brown);
+  margin-bottom: 6px;
+}
+header p { font-size: 12.5px; color: var(--muted); letter-spacing: 1.5px; }
+
+/* 進度主卡 */
+.progress-card {
+  background: linear-gradient(135deg, #3A2810 0%, #5C3D1A 100%);
+  border-radius: 24px;
+  padding: 30px 28px 26px;
+  margin-bottom: 28px;
+  box-shadow: 0 12px 40px rgba(60,30,10,0.25);
+  position: relative;
+  overflow: hidden;
+}
+.progress-card::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+}
+.progress-card::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; left: 40px;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: rgba(200,135,58,0.08);
+}
+
+.pc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 22px;
+  position: relative;
+  z-index: 1;
+}
+.pc-label {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.pc-pct {
+  font-family: 'Noto Serif TC', serif;
+  font-size: 56px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  transition: all 0.5s ease;
+}
+.pc-pct sup {
+  font-size: 20px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.6);
+  vertical-align: super;
+}
+
+/* 環形進度 */
+.ring-wrap { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+.ring-wrap svg { transform: rotate(-90deg); width: 80px; height: 80px; }
+.ring-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 7; }
+.ring-fill {
+  fill: none;
+  stroke: url(#ringGrad);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ring-pct-small {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif TC', serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* 長條 */
+.bar-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 1;
+}
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold) 0%, #E8C06A 50%, var(--green-light) 100%);
+  border-radius: 99px;
+  width: 0%;
+  transition: width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 12px rgba(200,135,58,0.6);
+}
+.status-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  text-align: center;
+  min-height: 20px;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s;
+  letter-spacing: 0.5px;
+}
+
+/* 完成 */
+.complete-msg { display: none; text-align: center; padding: 8px 0 4px; position: relative; z-index: 1; }
+.complete-msg .big { font-size: 40px; display: block; margin-bottom: 6px; animation: pop 0.5s ease; }
+@keyframes pop { 0%{transform:scale(0.3);opacity:0} 70%{transform:scale(1.2)} 100%{transform:scale(1);opacity:1} }
+.complete-msg p { font-family:'Noto Serif TC',serif; font-size:16px; font-weight:700; color:#fff; }
+.complete-msg small { font-size:12px; color:rgba(255,255,255,0.55); display:block; margin-top:4px; }
+
+/* Section label */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 24px 0 12px;
+}
+.section-label::before, .section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.section-label span {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+/* 項目 */
+.item {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 15px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 10px var(--shadow);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+.item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--border);
+  border-radius: 4px 0 0 4px;
+  transition: background 0.3s;
+}
+.item:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 8px 24px var(--shadow); border-color: var(--gold); }
+.item:hover::before { background: var(--gold); }
+.item:active { transform: scale(0.98); }
+.item.done { background: linear-gradient(135deg, #F2FAF0, #EDFAE8); border-color: var(--green); }
+.item.done::before { background: var(--green); }
+.item.ongoing { background: linear-gradient(135deg, #FDF8F0, #FEF4E6); border-color: var(--gold-light); }
+.item.ongoing::before { background: var(--gold-light); }
+
+/* Checkbox */
+.checkbox {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-size: 15px;
+  background: var(--warm);
+}
+.item.done .checkbox {
+  background: linear-gradient(135deg, var(--green), var(--green-light));
+  border-color: var(--green);
+  box-shadow: 0 4px 12px rgba(122,170,104,0.4);
+  transform: scale(1.05);
+}
+.item.ongoing .checkbox {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  border-color: var(--gold);
+  box-shadow: 0 4px 12px rgba(200,135,58,0.35);
+}
+
+/* 文字 */
+.item-body { flex: 1; min-width: 0; }
+.item-title { font-size: 14.5px; font-weight: 500; color: var(--brown); margin-bottom: 3px; transition: color 0.2s; }
+.item.done .item-title { color: #3D7030; }
+.item-sub { font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+.ongoing-tag {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  background: rgba(200,135,58,0.1);
+  border-radius: 4px;
+  padding: 2px 7px;
+  margin-top: 4px;
+  border: 1px solid rgba(200,135,58,0.2);
+}
+
+/* 安心度 badge */
+.item-badge {
+  font-family: 'Noto Serif TC', serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+  background: rgba(200,135,58,0.1);
+  border: 1px solid rgba(200,135,58,0.2);
+  border-radius: 8px;
+  padding: 4px 10px;
+  flex-shrink: 0;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+.item.done .item-badge {
+  color: var(--green);
+  background: rgba(122,170,104,0.12);
+  border-color: rgba(122,170,104,0.25);
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+footer p { font-size: 11.5px; color: var(--muted); letter-spacing: 0.5px; line-height: 2; }
+footer .hearts { font-size: 18px; display: block; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="bg-deco"></div>
+<div class="bg-dots"></div>
+
+<div class="container">
+
+  <header>
+    <div class="paw-wrap">🐾</div>
+    <h1>跳蚤處理安心進度</h1>
+    <p>點選已完成的項目 · 讓焦慮慢慢消失</p>
+  </header>
+
+  <div class="progress-card">
+    <svg width="0" height="0" style="position:absolute">
+      <defs>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#C8873A"/>
+          <stop offset="100%" style="stop-color:#96c484"/>
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <div class="pc-top">
+      <div>
+        <div class="pc-label">目前安心度</div>
+        <div class="pc-pct" id="pctNum">0<sup>%</sup></div>
+      </div>
+      <div class="ring-wrap">
+        <svg viewBox="0 0 80 80">
+          <circle class="ring-bg" cx="40" cy="40" r="35"/>
+          <circle class="ring-fill" id="ringFill" cx="40" cy="40" r="35"/>
+        </svg>
+        <div class="ring-pct-small" id="ringPct">0%</div>
+      </div>
+    </div>
+
+    <div class="bar-track">
+      <div class="bar-fill" id="barFill"></div>
+    </div>
+
+    <div class="status-text" id="statusText">點選下方已完成的項目開始計算</div>
+
+    <div class="complete-msg" id="completeMsg">
+      <span class="big">🎊</span>
+      <p>全部都做到了，放心吧！</p>
+      <small>Waxwax 和 Bebe 的環境已經安全了 🐱🐱</small>
+    </div>
+  </div>
+
+  <div class="section-label"><span>貓咪驅蟲</span></div>
+
+  <div class="item" data-pct="35" data-id="cat1" onclick="toggle(this)">
+    <div class="checkbox" id="chk-cat1"></div>
+    <div class="item-body">
+      <div class="item-title">大貓點藥（Waxwax）</div>
+      <div class="item-sub">蚤不到全效滴劑 · 每月一次</div>
+    </div>
+    <div class="item-badge">+35%</div>
+  </div>
+
+  <div class="item" data-pct="20" data-id="cat2" onclick="toggle(this)">
+    <div class="checkbox" id="chk-cat2"></div>
+    <div class="item-body">
+      <div class="item-title">小貓點藥（Bebe）</div>
+      <div class="item-sub">蚤不到全效滴劑 · 每月一次</div>
+    </div>
+    <div class="item-badge">+20%</div>
+  </div>
+
+  <div class="section-label"><span>環境清潔</span></div>
+
+  <div class="item" data-pct="10" data-id="laundry" onclick="toggle(this)">
+    <div class="checkbox" id="chk-laundry"></div>
+    <div class="item-body">
+      <div class="item-title">衣服與床被送洗烘乾</div>
+      <div class="item-sub">60°C 以上熱水 + 烘乾機高溫</div>
+    </div>
+    <div class="item-badge">+10%</div>
+  </div>
+
+  <div class="item" data-pct="2" data-id="petbed" onclick="toggle(this)">
+    <div class="checkbox" id="chk-petbed"></div>
+    <div class="item-body">
+      <div class="item-title">貓窩與貓毯清洗</div>
+      <div class="item-sub">蚤卵密度最高的地方，單獨處理</div>
+    </div>
+    <div class="item-badge">+2%</div>
+  </div>
+
+  <div class="item ongoing" data-pct="3" data-id="vacuum" onclick="toggle(this)">
+    <div class="checkbox" id="chk-vacuum"></div>
+    <div class="item-body">
+      <div class="item-title">持續吸塵（進行中）</div>
+      <div class="item-sub">每2～3天 · 牆角、沙發底、床底<br>吸完集塵盒立刻丟到屋外</div>
+      <span class="ongoing-tag">◉ 持續維持中</span>
+    </div>
+    <div class="item-badge">+3%</div>
+  </div>
+
+  <div class="section-label"><span>環境用藥</span></div>
+
+  <div class="item" data-pct="10" data-id="spray1" onclick="toggle(this)">
+    <div class="checkbox" id="chk-spray1"></div>
+    <div class="item-body">
+      <div class="item-title">百無一蝨噴灑環境</div>
+      <div class="item-sub">牆角、沙發縫、床底 · 草本驅避輔助</div>
+    </div>
+    <div class="item-badge">+10%</div>
+  </div>
+
+  <div class="item" data-pct="10" data-id="spray2" onclick="toggle(this)">
+    <div class="checkbox" id="chk-spray2"></div>
+    <div class="item-body">
+      <div class="item-title">補買 IGR 環境噴劑</div>
+      <div class="item-sub">含 Methoprene · 阻斷蛹孵化鏈<br>蝦皮 / momo 搜尋「室內除蚤噴霧 IGR」</div>
+    </div>
+    <div class="item-badge">+10%</div>
+  </div>
+
+  <div class="section-label"><span>其他動物與醫療</span></div>
+
+  <div class="item" data-pct="5" data-id="others" onclick="toggle(this)">
+    <div class="checkbox" id="chk-others"></div>
+    <div class="item-body">
+      <div class="item-title">兔子、老鼠環境用藥</div>
+      <div class="item-sub">小動物生活區域進行環境噴灑</div>
+    </div>
+    <div class="item-badge">+5%</div>
+  </div>
+
+  <div class="item" data-pct="5" data-id="vet" onclick="toggle(this)">
+    <div class="checkbox" id="chk-vet"></div>
+    <div class="item-body">
+      <div class="item-title">帶去看醫師複診</div>
+      <div class="item-sub">下週動物醫院 · 確認驅蟲效果</div>
+    </div>
+    <div class="item-badge">+5%</div>
+  </div>
+
+  <footer>
+    <span class="hearts">🐱 🐇 🐭</span>
+    <p>點選項目打勾 · 再點一次取消<br>進度自動儲存在這台裝置上</p>
+  </footer>
+
+</div>
+
+<script>
+const CIRC = 2 * Math.PI * 35;
+
+const STATUS = [
+  { max: 0,   text: "還沒開始，但你能做到的 💪" },
+  { max: 20,  text: "已經開始了，做得好 👍" },
+  { max: 40,  text: "貓咪有保護了，安心一點 🐱" },
+  { max: 60,  text: "過半了，環境在慢慢變乾淨 ✨" },
+  { max: 80,  text: "做很多了，焦慮可以少一半了 😌" },
+  { max: 99,  text: "快完成了，剩下交給時間 🌿" },
+  { max: 100, text: "全部都做到了！" }
+];
+
+let state = {};
+try { state = JSON.parse(localStorage.getItem('flea_v2') || '{}'); } catch(e) {}
+
+function getStatus(pct) {
+  for (let s of STATUS) { if (pct <= s.max) return s.text; }
+  return STATUS[STATUS.length - 1].text;
+}
+
+function calcTotal() {
+  let t = 0;
+  document.querySelectorAll('.item').forEach(el => {
+    if (el.classList.contains('done')) t += parseInt(el.dataset.pct);
+  });
+  return Math.min(t, 100);
+}
+
+function updateUI() {
+  const pct = calcTotal();
+  document.getElementById('pctNum').innerHTML = pct + '<sup>%</sup>';
+  document.getElementById('ringPct').textContent = pct + '%';
+  document.getElementById('barFill').style.width = pct + '%';
+
+  const offset = CIRC - (pct / 100) * CIRC;
+  const ring = document.getElementById('ringFill');
+  ring.style.strokeDasharray = CIRC;
+  ring.style.strokeDashoffset = offset;
+
+  const statusEl = document.getElementById('statusText');
+  const completeEl = document.getElementById('completeMsg');
+  if (pct >= 100) {
+    statusEl.style.display = 'none';
+    completeEl.style.display = 'block';
+  } else {
+    statusEl.style.display = 'block';
+    completeEl.style.display = 'none';
+    statusEl.textContent = getStatus(pct);
+  }
+}
+
+function toggle(el) {
+  const id = el.dataset.id;
+  const chk = document.getElementById('chk-' + id);
+  if (el.classList.contains('done')) {
+    el.classList.remove('done');
+    chk.textContent = '';
+    if (id === 'vacuum') el.classList.add('ongoing');
+  } else {
+    el.classList.remove('ongoing');
+    el.classList.add('done');
+    chk.innerHTML = '✓';
+  }
+  state[id] = el.classList.contains('done');
+  try { localStorage.setItem('flea_v2', JSON.stringify(state)); } catch(e) {}
+  updateUI();
+}
+
+function init() {
+  document.querySelectorAll('.item').forEach(el => {
+    if (state[el.dataset.id]) {
+      el.classList.remove('ongoing');
+      el.classList.add('done');
+      document.getElementById('chk-' + el.dataset.id).innerHTML = '✓';
+    }
+  });
+  updateUI();
+}
+
+init();
+</script>
+</body>
+</html>
